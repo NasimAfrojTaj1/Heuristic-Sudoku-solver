@@ -1,6 +1,17 @@
-function sudoku_gui()
 close all
 clc
+
+% defaultPuzzle = [
+%     0 0 0 0 0 6 0 0 0;
+%     0 5 9 0 0 0 0 0 8;
+%     2 0 0 0 0 8 0 0 0;
+%     0 4 5 0 0 0 0 0 0;
+%     0 0 3 0 0 0 0 0 0;
+%     0 0 6 0 0 3 0 5 4;
+%     0 0 0 3 2 5 0 0 6;
+%     0 0 0 0 0 0 0 0 0;
+%     0 0 0 0 0 0 0 0 0;
+%     ];
 
 defaultPuzzle = [
     4 5 0 0 0 0 0 0 0;
@@ -15,15 +26,27 @@ defaultPuzzle = [
     ];
 
 % defaultPuzzle = [
-%     0 0 0 0 0 6 0 0 0;
-%     0 5 9 0 0 0 0 0 8;
-%     2 0 0 0 0 8 0 0 0;
-%     0 4 5 0 0 0 0 0 0;
-%     0 0 3 0 0 0 0 0 0;
-%     0 0 6 0 0 3 0 5 4;
-%     0 0 0 3 2 5 0 0 6;
-%     0 0 0 0 0 0 0 0 0;
-%     0 0 0 0 0 0 0 0 0;
+%    0 0 0 0 7 0 0 0 0;
+%    3 6 0 0 0 9 1 8 0;
+%    0 2 0 5 0 0 3 0 0;
+%    0 0 0 0 0 0 0 0 0;
+%    0 0 8 2 0 0 0 4 0;
+%    0 4 0 6 0 3 0 0 0;
+%    0 5 0 0 0 0 0 0 6;
+%    6 0 3 0 0 0 2 0 0;
+%    0 0 0 0 9 0 7 0 0
+%     ]; %imposiible
+
+% defaultPuzzle = [
+%    0 0 0 0 0 0 0 0 0;
+%    0 0 0 0 0 0 0 0 0;
+%    0 0 0 0 0 0 0 0 0;
+%    0 0 0 0 0 0 0 0 0;
+%    0 0 0 0 0 0 0 0 0;
+%    0 0 0 0 0 0 0 0 0;
+%    0 0 0 0 0 0 0 0 0;
+%    0 0 0 0 0 0 0 0 0;
+%    0 0 0 0 0 0 0 0 0
 %     ];
 
 f = uifigure('Position', [100, 100, 600, 730], 'Name', 'Sudoku Solver');
@@ -42,7 +65,6 @@ gridPanel.RowSpacing = 0;
 gridPanel.ColumnSpacing = 0;
 
 sudokuCells = cell(9, 9);
-
 idxMap = [1,2,3,5,6,7,9,10,11];
 
 for i = 1:9
@@ -53,7 +75,6 @@ for i = 1:9
             'HorizontalAlignment', 'center', ...
             'Limits', [0 9], ...
             'RoundFractionalValues', true);
-
         sudokuCells{i,j}.Layout.Row = idxMap(i);
         sudokuCells{i,j}.Layout.Column = idxMap(j);
 
@@ -78,98 +99,111 @@ statusLabel = uilabel(f, 'Text', '', 'FontSize', 14, ...
 buttonWidth = 100;
 buttonHeight = 40;
 buttonSpacing = 35;
-totalButtonWidth = 3 * buttonWidth + 2 * buttonSpacing;
 centerX = (f.Position(3) - buttonWidth) / 2 - 25;
 startY = 20;
 
-% Solve button (center)
 solveButton = uibutton(f, 'push', 'Text', 'Solve', ...
     'Position', [centerX, startY, buttonWidth, buttonHeight], ...
-    'ButtonPushedFcn', @(btn, event) solveAndDisplay(sudokuCells, statusLabel), ...
+    'ButtonPushedFcn', @(btn, event) solveAndDisplay(f, sudokuCells, statusLabel), ...
     'FontSize', 14, 'BackgroundColor', [0.1, 0.6, 0.1], 'FontColor', 'white');
 
-% Default button (left of Solve)
 defaultButton = uibutton(f, 'push', 'Text', 'Given Set', ...
     'Position', [centerX - buttonWidth - buttonSpacing, startY, buttonWidth, buttonHeight], ...
     'ButtonPushedFcn', @(btn, event) loadDefaultPuzzle(sudokuCells, defaultPuzzle, statusLabel), ...
     'FontSize', 14, 'BackgroundColor', [0.1, 0.1, 0.6], 'FontColor', 'white');
 
-% Clear button (right of Solve)
 clearButton = uibutton(f, 'push', 'Text', 'Clear', ...
     'Position', [centerX + buttonWidth + buttonSpacing, startY, buttonWidth, buttonHeight], ...
     'ButtonPushedFcn', @(btn, event) clearBoard(sudokuCells, statusLabel), ...
     'FontSize', 14, 'BackgroundColor', [0.6, 0.1, 0.1], 'FontColor', 'white');
 
+function validateInput(src)
+if src.Value < 1 || src.Value > 9
+    src.Value = 0;
+end
+end
 
-    function validateInput(src)
-        if src.Value < 1 || src.Value > 9
-            src.Value = 0;
+function solveAndDisplay(f, sudokuCells, statusLabel)
+initialGrid = zeros(9, 9);
+userInputMask = false(9, 9);
+
+for i = 1:9
+    for j = 1:9
+        val = sudokuCells{i,j}.Value;
+        initialGrid(i,j) = val;
+        if val ~= 0
+            userInputMask(i,j) = true;
         end
-    end
-
-    function solveAndDisplay(sudokuCells, statusLabel)
-        initialGrid = zeros(9, 9);
-        userInputMask = false(9, 9);
-
-        for i = 1:9
-            for j = 1:9
-                val = sudokuCells{i,j}.Value;
-                initialGrid(i,j) = val;
-                if val ~= 0
-                    userInputMask(i,j) = true;
-                end
-            end
-        end
-
-        drawnow;
-        statusLabel.Text = 'Solving... Please wait...';
-        drawnow;
-
-        [solvedGrid, steps, restarts] = simulatedAnnealingSudoku(initialGrid, statusLabel);
-
-        for i = 1:9
-            for j = 1:9
-                sudokuCells{i,j}.Value = solvedGrid(i,j);
-                if userInputMask(i,j)
-                    sudokuCells{i,j}.FontWeight = 'bold';
-                    sudokuCells{i,j}.FontAngle = 'normal';
-                else
-                    sudokuCells{i,j}.FontWeight = 'normal';
-                    sudokuCells{i,j}.FontAngle = 'italic';
-                end
-            end
-        end
-
-        if all(solvedGrid(:) == initialGrid(:))
-            statusLabel.Text = 'Could not solve the puzzle after max steps.';
-            uialert(f, 'The solver could not complete the puzzle. Please check for ambiguity or insufficient input.', ...
-                'Unsolved', 'Icon', 'warning');
-        else
-            statusLabel.Text = sprintf('Solved in %d steps with %d restarts.', steps, restarts);
-        end
-    end
-
-    function clearBoard(sudokuCells, statusLabel)
-        for i = 1:9
-            for j = 1:9
-                sudokuCells{i,j}.Value = 0;
-                sudokuCells{i,j}.FontWeight = 'normal';
-                sudokuCells{i,j}.FontAngle = 'normal';
-
-                if mod(floor((i-1)/3) + floor((j-1)/3), 2) == 0
-                    sudokuCells{i,j}.BackgroundColor = [1, 1, 1];
-                else
-                    sudokuCells{i,j}.BackgroundColor = [0.95, 0.95, 0.95];
-                end
-            end
-        end
-        statusLabel.Text = '';
     end
 end
 
+drawnow;
+statusLabel.Text = 'Solving... Please wait...';
+drawnow;
 
-%% Main Function
-function [solved, step, restartCount] = simulatedAnnealingSudoku(puzzle, statusLabel)
+[solvedGrid, steps, restarts] = simulatedAnnealingSudoku(initialGrid, statusLabel, sudokuCells);
+
+for i = 1:9
+    for j = 1:9
+        sudokuCells{i,j}.Value = solvedGrid(i,j);
+        if userInputMask(i,j)
+            sudokuCells{i,j}.FontWeight = 'bold';
+            sudokuCells{i,j}.FontAngle = 'normal';
+        else
+            sudokuCells{i,j}.FontWeight = 'normal';
+            sudokuCells{i,j}.FontAngle = 'italic';
+        end
+    end
+end
+
+if all(solvedGrid(:) == initialGrid(:))
+    for i = 1:9
+        for j = 1:9
+            if mod(floor((i-1)/3) + floor((j-1)/3), 2) == 0
+                sudokuCells{i,j}.BackgroundColor = [1, 1, 1];
+            else
+                sudokuCells{i,j}.BackgroundColor = [0.95, 0.95, 0.95];
+            end
+        end
+    end
+
+    statusLabel.Text = 'Could not solve the puzzle after max steps.';
+    uialert(f, 'The solver could not complete the puzzle. Please check for ambiguity or insufficient input.', ...
+        'Unsolved', 'Icon', 'error');
+else
+    statusLabel.Text = sprintf('Solved in %d steps with %d restarts.', steps, restarts);
+end
+
+for i = 1:9
+    for j = 1:9
+        if mod(floor((i-1)/3) + floor((j-1)/3), 2) == 0
+            sudokuCells{i,j}.BackgroundColor = [1, 1, 1];
+        else
+            sudokuCells{i,j}.BackgroundColor = [0.95, 0.95, 0.95];
+        end
+    end
+end
+
+end
+
+function clearBoard(sudokuCells, statusLabel)
+for i = 1:9
+    for j = 1:9
+        sudokuCells{i,j}.Value = 0;
+        sudokuCells{i,j}.FontWeight = 'normal';
+        sudokuCells{i,j}.FontAngle = 'normal';
+
+        if mod(floor((i-1)/3) + floor((j-1)/3), 2) == 0
+            sudokuCells{i,j}.BackgroundColor = [1, 1, 1];
+        else
+            sudokuCells{i,j}.BackgroundColor = [0.95, 0.95, 0.95];
+        end
+    end
+end
+statusLabel.Text = '';
+end
+
+function [solved, step, restartCount] = simulatedAnnealingSudoku(puzzle, statusLabel, sudokuCells)
 fixed = puzzle ~= 0;
 current = random_fill(puzzle, fixed);
 cost = sudoku_cost(current);
@@ -190,7 +224,7 @@ for step = 1:max_steps
     block_fixed = fixed(row_range, col_range);
     [r, c] = find(~block_fixed);
     if numel(r) < 2
-        continue
+        continue;
     end
 
     idx = randperm(length(r), 2);
@@ -220,10 +254,38 @@ for step = 1:max_steps
         no_improve_count = no_improve_count + 1;
     end
 
-    if mod(step, 1000) == 0
+    if mod(step, 500) == 0
+        conflictMask = get_conflict_mask(current);
+        for i = 1:9
+            for j = 1:9
+                sudokuCells{i,j}.Value = current(i,j);
+                if mod(floor((i-1)/3) + floor((j-1)/3), 2) == 0
+                    origColor = [1, 1, 1];
+                else
+                    origColor = [0.95, 0.95, 0.95];
+                end
+
+                if fixed(i,j)
+                    sudokuCells{i,j}.FontWeight = 'bold';
+                    sudokuCells{i,j}.FontAngle = 'normal';
+                    sudokuCells{i,j}.BackgroundColor = origColor;
+                else
+                    sudokuCells{i,j}.FontWeight = 'normal';
+                    sudokuCells{i,j}.FontAngle = 'italic';
+
+                    if conflictMask(i,j)
+                        sudokuCells{i,j}.BackgroundColor = [1, 0.8, 0.8];
+                    else
+                        sudokuCells{i,j}.BackgroundColor = origColor;
+                    end
+                end
+
+            end
+        end
         statusLabel.Text = sprintf('Step: %d | Restarts: %d | Current Cost: %d', step, restartCount, cost);
         drawnow;
     end
+
 
     if no_improve_count > 20000
         current = random_fill(puzzle, fixed);
@@ -237,10 +299,7 @@ for step = 1:max_steps
     end
 
     T = T * cooling;
-
-    if cost == 0
-        break
-    end
+    if cost == 0, break; end
 end
 
 if cost == 0
@@ -248,6 +307,7 @@ if cost == 0
 else
     solved = puzzle;
 end
+
 end
 
 function cost = sudoku_cost(grid)
@@ -295,4 +355,42 @@ for i = 1:9
     end
 end
 statusLabel.Text = 'Default puzzle loaded.';
+end
+
+function conflictMask = get_conflict_mask(grid)
+conflictMask = false(9, 9);
+
+for i = 1:9
+    row = grid(i,:);
+    [~, ~, idx] = unique(row);
+    counts = histc(idx, 1:max(idx));
+    dup_vals = find(counts > 1);
+    for val = dup_vals'
+        conflictMask(i, row == row(find(idx == val, 1))) = true;
+    end
+end
+
+for j = 1:9
+    col = grid(:,j);
+    [~, ~, idx] = unique(col);
+    counts = histc(idx, 1:max(idx));
+    dup_vals = find(counts > 1);
+    for val = dup_vals'
+        conflictMask(col == col(find(idx == val, 1)), j) = true;
+    end
+end
+
+for bi = 0:2
+    for bj = 0:2
+        block = grid(3*bi+1:3*bi+3, 3*bj+1:3*bj+3);
+        [~, ~, idx] = unique(block(:));
+        counts = histc(idx, 1:max(idx));
+        dup_vals = find(counts > 1);
+        for val = dup_vals'
+            mask = reshape(idx == val, [3,3]);
+            conflictMask(3*bi+1:3*bi+3, 3*bj+1:3*bj+3) = ...
+                conflictMask(3*bi+1:3*bi+3, 3*bj+1:3*bj+3) | mask;
+        end
+    end
+end
 end
